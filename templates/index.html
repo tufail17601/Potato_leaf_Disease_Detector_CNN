@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Potato Disease Detector</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #ecfdf5, #e0f2fe);
+      color: #1f2937;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      background: white;
+      padding: 35px;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 10px 0 5px;
+      color: #065f46;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      margin-top: 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .upload-section {
+      padding: 25px;
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      text-align: center;
+      transition: border-color 0.2s ease;
+    }
+
+    .upload-section:hover {
+      border-color: #10b981;
+    }
+
+    .upload-section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #1f2937;
+    }
+
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #059669;
+      color: white;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background-color: #047857;
+      transform: scale(1.02);
+    }
+
+    /* Image preview */
+    #preview {
+      display: none;
+      margin-top: 20px;
+      border-radius: 10px;
+      max-width: 100%;
+      height: auto;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transition: opacity 0.3s ease;
+    }
+
+    /* Result section layout */
+    .result-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    .result-box {
+      flex: 1;
+      min-width: 250px;
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 6px solid;
+      font-size: 1.05rem;
+      animation: fadeIn 0.6s ease;
+    }
+
+    .result-healthy {
+      border-color: #10b981;
+      background-color: #ecfdf5;
+      color: #065f46;
+    }
+
+    .result-early-blight {
+      border-color: #f59e0b;
+      background-color: #fff7ed;
+      color: #92400e;
+    }
+
+    .result-late-blight {
+      border-color: #ef4444;
+      background-color: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .result-error {
+      border-color: #6b7280;
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+
+    .result-title {
+      font-weight: 800;
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .confidence {
+      font-weight: 700;
+      color: #111827;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 25px;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div style="color: #10b981; margin-bottom: 10px;">
+      <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 8c0-2.3-2.2-4-5-4-2.8 0-5 1.7-5 4 0 5.5 5 8 5 8s5-2.5 5-8z"/>
+        <path d="M12 22s-2.5-3.5-2.5-12"/>
+      </svg>
+    </div>
+    <h1>Potato Disease Detector</h1>
+    <p>Server Status: <span class="status-badge">{{ status }}</span></p>
+  </header>
+
+  <!-- Upload Form -->
+  <form method="POST" action="/" enctype="multipart/form-data" class="upload-section">
+    <h2>Upload a Potato Leaf Image</h2>
+    <input type="file" id="file-input" name="file" accept="image/*" required onchange="previewImage(event)">
+    <img id="preview" alt="Uploaded Image Preview">
+    <button type="submit">Analyze Image</button>
+  </form>
+
+  <!-- Result Section -->
+  {% if result %}
+  <div class="result-container">
+    {% set class_name = result.get('class', 'Error') %}
+    {% set confidence = result.get('confidence', 0.0) %}
+    {% set is_error = result.get('error') %}
+
+    {% if is_error %}
+      {% set box_class = 'result-error' %}
+      {% set title_text = 'Analysis Error' %}
+    {% elif class_name == 'Healthy' %}
+      {% set box_class = 'result-healthy' %}
+      {% set title_text = 'Diagnosis: Healthy' %}
+    {% elif class_name == 'Early Blight' %}
+      {% set box_class = 'result-early-blight' %}
+      {% set title_text = 'Diagnosis: Early Blight' %}
+    {% elif class_name == 'Late Blight' %}
+      {% set box_class = 'result-late-blight' %}
+      {% set title_text = 'Diagnosis: Late Blight' %}
+    {% else %}
+      {% set box_class = 'result-error' %}
+      {% set title_text = 'Unknown Result' %}
+    {% endif %}
+
+    <div class="result-box {{ box_class }}">
+      <div class="result-title">{{ title_text }}</div>
+      {% if is_error %}
+        <p>Error Message: {{ result.error }}</p>
+      {% else %}
+        <p>Predicted Class: <span class="confidence">{{ class_name }}</span></p>
+        <p>Confidence: <span class="confidence">{{ confidence }}%</span></p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <footer>© 2025 Potato Disease Detection | Flask + TensorFlow</footer>
+</div>
+
+<script>
+  function previewImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('preview');
+    if (file) {
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      preview.style.opacity = '1';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+</script>
+
+</body>
+</html>
